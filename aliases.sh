@@ -31,6 +31,7 @@ _gsemantic() {
     fi
 }
 
+# TODO: stop when already pushed messages reached
 _resetWIP() {
     latestSHA=$(git rev-parse HEAD)
     remoteSHA=$(git rev-parse origin/master 2> /dev/null)
