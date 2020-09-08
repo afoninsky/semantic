@@ -23,9 +23,10 @@ _gsemantic() {
         echo "Invalid commit message, supported formats:"
         echo "\"<command> message\""
         echo "\"<command> +scope message\""
-        echo "commands: gchore, gtst, gperf, gdoc, gref, gfix, gfeat"
+        echo "commands: gchore, gtest, gperf, gdoc, gref, gfix, gfeat"
     else
-        _resetWIP
+        # TODO: fix reset wip, reset till latest origin only
+        # _resetWIP
         git add -A
         git commit -m "${commit}"
     fi
