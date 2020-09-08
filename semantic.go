@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/afoninsky/semantic/pkg/repository"
+	"github.com/afoninsky/semantic/pkg/static"
 )
 
 func main() {
@@ -18,6 +19,10 @@ func main() {
 	exitIfErr(err)
 
 	switch cmd {
+	case "aliases":
+		data, err := static.Asset("scripts/aliases.sh")
+		exitIfErr(err)
+		fmt.Println(string(data))
 
 	case "current":
 		fmt.Printf(info.LatestVersion)
