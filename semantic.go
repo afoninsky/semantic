@@ -40,6 +40,19 @@ func main() {
 		fmt.Printf("%s: \"%s\" -> \"%s\"\n", os.Args[2], os.Args[3], os.Args[4])
 		exitIfErr(replace.Do(os.Args[2], os.Args[3], os.Args[4]))
 
+	case "push":
+		var user, password, key string
+		if len(os.Args) > 2 {
+			user = os.Args[2]
+		}
+		if len(os.Args) > 3 {
+			password = os.Args[3]
+		}
+		if len(os.Args) > 4 {
+			key = os.Args[4]
+		}
+		exitIfErr(r.PushExperimental(user, password, key))
+
 	// return current release version, useful in CI
 	case "current":
 		fmt.Printf(info.LatestVersion)

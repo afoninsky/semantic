@@ -2,15 +2,20 @@ package repository
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
 type SemanticVersion uint8
@@ -104,6 +109,52 @@ func (r *Repository) Info() (ReleaseInfo, error) {
 	return i, nil
 }
 
+// PushExperimental pushes code to remote repository using provided credentials
+// can be usefull in some CI cases
+func (r *Repository) PushExperimental(user, password, key string) error {
+
+	// check remote URL to ensure what auth should be applied
+	remote, err := r.git.Remote("origin")
+	if err != nil {
+		return err
+	}
+	urls := remote.Config().URLs
+	url := urls[0]
+
+	fmt.Println(url)
+
+	var auth transport.AuthMethod
+	switch {
+	case strings.HasPrefix(url, "git"):
+		sshAuth, err := ssh.NewPublicKeysFromFile(
+			user,
+			sanitizeSSHKeyPath(key),
+			password,
+		)
+		if err != nil {
+			return fmt.Errorf("PEM file not found: %s", key)
+		}
+		auth = sshAuth
+	case strings.HasPrefix(url, "http"):
+		auth = &http.BasicAuth{
+			Username: user,
+			Password: password,
+		}
+
+	default:
+		return fmt.Errorf("unsupported remote URL: %s", url)
+	}
+
+	// push current tags and commits
+	return r.git.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{
+			config.RefSpec("+refs/heads/*:refs/heads/*"),
+			config.RefSpec("+refs/tags/*:refs/tags/*"),
+		},
+		Auth: auth,
+	})
+}
+
 // iterates over tags finding latest semantic tag
 // returns assigned semantic version and commit hash
 func (r *Repository) getLatestVersion() (string, string, error) {
@@ -125,8 +176,6 @@ func (r *Repository) getLatestVersion() (string, string, error) {
 		return nil
 	})
 
-	// i.HasChanges = sdfsdf
-	// i.GitShort = hash[:7]
 	return current.String(), hash, err
 }
 
@@ -295,4 +344,12 @@ func inStringSlice(item string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func sanitizeSSHKeyPath(key string) string {
+	if strings.HasPrefix(key, "~") {
+		home, _ := os.UserHomeDir()
+		key = home + key[1:]
+	}
+	return key
 }
