@@ -15,10 +15,6 @@ func main() {
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
-	r, err := repository.New("./")
-	exitIfErr(err)
-	info, err := r.Info()
-	exitIfErr(err)
 
 	switch cmd {
 
@@ -41,6 +37,7 @@ func main() {
 		exitIfErr(replace.Do(os.Args[2], os.Args[3], os.Args[4]))
 
 	case "push":
+		r := getRepo()
 		var user, password, key string
 		if len(os.Args) > 2 {
 			user = os.Args[2]
@@ -55,18 +52,30 @@ func main() {
 
 	// return current release version, useful in CI
 	case "current":
+		r := getRepo()
+		info, err := r.Info()
+		exitIfErr(err)
 		fmt.Printf(info.LatestVersion)
 
 	// return next release version, useful in CI
 	case "next":
+		r := getRepo()
+		info, err := r.Info()
+		exitIfErr(err)
 		fmt.Printf(info.NextVersion)
 
 	// return current tag containing version and git commit, useful in CI
 	case "tag":
+		r := getRepo()
+		info, err := r.Info()
+		exitIfErr(err)
 		fmt.Printf(info.CurrentTag)
 
 	// display common information about status of semantic release
 	case "":
+		r := getRepo()
+		info, err := r.Info()
+		exitIfErr(err)
 		fmt.Printf("Latest version: %s\n", info.LatestVersion)
 		fmt.Printf("Current tag: %s\n", info.CurrentTag)
 		if info.NextVersion != "" {
@@ -90,4 +99,10 @@ func exitIfErr(err error) {
 		fmt.Printf("[ERROR] %s\n", err)
 		os.Exit(1)
 	}
+}
+
+func getRepo() *repository.Repository {
+	r, err := repository.New("./")
+	exitIfErr(err)
+	return r
 }
